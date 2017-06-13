@@ -1,3 +1,8 @@
+#################
+#
+#   Match the OS number to the version string given kernel32.dll library
+#
+#################
 
 if ($args.length -gt 0) {
 
@@ -18,6 +23,7 @@ if ($args.length -gt 0) {
    $dict.Add('10.0.15063','Windows 10 (2017-04-11)') 
 
    $file_path = $args[0]
+   $file_path = (Resolve-Path $file_path).Path
    $file_version = [System.Diagnostics.FileVersionInfo]::GetVersionInfo($file_path).FileVersion
    $ver_arr = $file_version.split(".")
    $ver = $ver_arr[0..2] -join "."
