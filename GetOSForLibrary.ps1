@@ -12,7 +12,7 @@ if ($args.length -gt 0) {
    $dict.Add('6.1.7601','Windows 7 SP1 or Windows Server 2008 R2 SP1')
    $dict.Add('6.2.9200','Windows 8 or Windows Server 2012')
    $dict.Add('6.3.9600','Windows 8.1 or Windows Server 2012 R2')
-   $dict.Add('10.0.10249','Windows 10 (2015-07-29)')
+   $dict.Add('10.0.10240','Windows 10 (2015-07-29)')
    $dict.Add('10.0.10586','Windows 10 (2015-11-12)')
    $dict.Add('10.0.14393','Windows 10 or Windows Server 2016 (2016-07-18)')
    $dict.Add('10.0.15063','Windows 10 (2017-04-11)') 
@@ -25,7 +25,7 @@ if ($args.length -gt 0) {
    
    #If nothin returned set to unknown
    if ($win.length -eq 0){
-      $win = "Unknown"
+      $win = "Unknown: $ver"
    }
    
    $file_name = [System.IO.Path]::GetFileName($file_path)
