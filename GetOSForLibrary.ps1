@@ -1,9 +1,3 @@
-######
-#
-#  Get the OS version for the given library
-#
-######
-
 
 if ($args.length -gt 0) {
 
@@ -34,7 +28,13 @@ if ($args.length -gt 0) {
       $win = "Unknown"
    }
    
-   Write-Host $file_path : $win 
+   $file_name = [System.IO.Path]::GetFileName($file_path)
+   $header = '{0,-25} {1,-30}' -f "File:", "Operating System:"
+   Write-Host "`n$header"
+   Write-Host "============================================"
+   $str = '{0,-25} {1,-30}' -f $file_name, $win
+   Write-Host $str
+   
 } else {
    Write-Host "Usage: .\GetOSForLibrary.ps1 <Library Path>"
 }
