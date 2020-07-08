@@ -21,7 +21,7 @@ proxies = None
 #}
 
 # if len(sys.argv) < 2:
-  # print "Usage: python oracle_boolean_time.py <SQL Query>"
+  # print "Usage: python oracle_sqli_error_boolean.py <SQL Query>"
   # sys.exit(1)
   
 # query = sys.argv[1]
